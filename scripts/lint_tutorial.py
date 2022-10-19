@@ -1,17 +1,15 @@
-"""Lint tutorial notebooks with pyflakes and pycodestyle (aka flake8).
+""" Lint tutorial notebooks with pyflakes and pycodestyle (aka flake8).
 
-Running this script on a notebook will print a report of issues flagged by
-pyflakes (which checks some aspects of code quality) and pycodestyle (which
-checks adherence to the PEP8 stylistic standards).
+This script checks for 
+- code quality via pyflakes
+- adherence to PEP8 stylistic standards (via pycodestyle) 
 
-Note that these checks do not capture all potential issues with a codebase,
-and some checks will false-alarm because of deliberate choices we have made
-about how to write tutorials. Nevertheless, this can be an easy way to flag
-potential issues.
+While these checks do not capture all potential issues with a codebase,
+and some checks will false-alarms because of deliberate choices we have made,
+it can, nevertheless, this can be an easy way to flag potential issues.
 
-Requires nbformat (part of Jupyter) and flake8.
+Requires nbformat (part of Jupyter suite) and flake8. """
 
-"""
 import os
 import io
 import re
@@ -30,33 +28,34 @@ def main(arglist):
     args = parse_args(arglist)
 
     _, fname = os.path.split(args.path)
-
+    
+    """ Extract cell lines """
     script, cell_lines = extract_code(args.path)
+    
     warnings, errors = check_code(script)
     violations = check_style(script)
 
     if args.brief:
         report_brief(fname, warnings, errors, violations)
     else:
+        # Return verbose report with remapped line numbers
         line_map = remap_line_numbers(cell_lines)
         report_verbose(fname, warnings, errors, violations, line_map)
 
 
 def parse_args(arglist):
-
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("path", help="Path to notebook file")
     parser.add_argument("--brief", action="store_true",
                         help="Print brief report (useful for aggregating)")
-
     return parser.parse_args(arglist)
 
 
 def extract_code(nb_fname):
-    """Turn code cells from notebook into a script, track cell sizes."""
+    """ Turn code cells from notebook into a script, track cell sizes. """
     with open(nb_fname) as f:
         nb = nbformat.read(f, nbformat.NO_CONVERT)
-
+        
     script_lines = []
     cell_lengths = []
     for cell in nb.get("cells", []):
@@ -67,14 +66,13 @@ def extract_code(nb_fname):
                 if line and line[0] in ["!", "%"]:  # IPython syntax
                     line = "# " + line
                 script_lines.append(line)
-
+                
     script = "\n".join(script_lines)
-
     return script, cell_lengths
 
 
 def check_code(script):
-    """Run pyflakes checks over the script and capture warnings/errors."""
+    """ Run pyflakes checks over input and capture warnings/errors. """
     errors = io.StringIO()
     warnings = io.StringIO()
     reporter = Reporter(warnings, errors)
@@ -87,7 +85,7 @@ def check_code(script):
 
 
 def check_style(script):
-    """Write a temporary script and run pycodestyle (PEP8) on it."""
+    """ Temporary script and run pycodestyle(PEP8) on it. """
 
     with tempfile.NamedTemporaryFile("w", suffix=".py") as f:
 
@@ -117,7 +115,7 @@ def check_style(script):
 
 
 def remap_line_numbers(cell_lines):
-    """Create a mapping from script line number to notebook cell/line."""
+    """ Create a mapping from script line number to notebook cell/line. """
     line_map = {}
     cell_start = 0
     for cell, cell_length in enumerate(cell_lines, 1):
@@ -128,7 +126,7 @@ def remap_line_numbers(cell_lines):
 
 
 def report_brief(fname, warnings, errors, violations):
-    """Print a single-line report, suibtable for aggregation."""
+    """ Aggregate report into concise one-liner """
     n_warnings = len(warnings.read().splitlines())
     n_errors = len(errors.read().splitlines())
     n_violations = len(list(violations.elements()))
@@ -136,7 +134,7 @@ def report_brief(fname, warnings, errors, violations):
 
 
 def report_verbose(fname, warnings, errors, violations, line_map):
-    """Report every pyflakes problem and more codestyle information."""
+    """ Report every pyflakes problem and more codestyle information. """
     s = f"Code report for {fname}"
     print("", s, "=" * len(s), sep="\n")
 
@@ -170,7 +168,7 @@ def report_verbose(fname, warnings, errors, violations, line_map):
 
 
 def reformat_line_problems(stream, line_map, prefix=""):
-    """Reformat a pyflakes output stream for notebook cells."""
+    """ Reformat a pyflakes output stream for notebook cells. """
     pat = re.compile(r"^\w*:(\d+):\d+ (.+)$")
 
     new_lines = []
@@ -188,5 +186,4 @@ def reformat_line_problems(stream, line_map, prefix=""):
 
 
 if __name__ == "__main__":
-
     main(sys.argv[1:])
