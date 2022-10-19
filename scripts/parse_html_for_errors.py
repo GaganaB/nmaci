@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 ARG = sys.argv[1]
 
 def main():
+    # YAML file with manually added information on day, category, (tutorial) name, (YT) playlist (Link), (OSF) slides (link), title (tutorial #x) for each tutorial in the repository
     with open('tutorials/materials.yml') as fh:
         materials = yaml.load(fh, Loader=yaml.FullLoader)
 
@@ -26,7 +27,7 @@ def main():
             # Find code output divs
             mydivs = parsed_html.find_all("div", {"class": "cell_output docutils container"})
 
-            # Remove div if it has an error
+            # Remove div if it has an error after parsing
             for div in mydivs:
                 if 'NotImplementedError' in str(div) or 'NameError' in str(div):
                     div.decompose()
