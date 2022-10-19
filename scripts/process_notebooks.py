@@ -1,10 +1,9 @@
-"""Process tutorials for Neuromatch Academy
-
+""" Process tutorials for Neuromatch Academy:
 - Filter input file list for .ipynb files
-- Check that the cells have been executed sequentially on a fresh kernel
+- Ensure cells have been executed sequentially on a fresh kernel
 - Strip trailing whitespace from all code lines
 - Either:
-  - Execute the notebook and fail if errors are encountered (apart from the `NotImplementedError`)
+  - Execute the notebook and fail if errors are encountered (except the `NotImplementedError`)
   - Check that all code cells have been executed without error
 - Extract solution code and write a .py file with the solution
 - Create the student version by replacing solution cells with a "hint" image and a link to the solution code
@@ -14,11 +13,10 @@
 - Standardize some Colab settings (always have ToC, always hide form cells)
 - Clean the notebooks (remove outputs and noisy metadata)
 - Write the executed version of the input notebook to its original path
-- Write the post-processed notebook to a student/ subdirectory
-- Write solution images to a static/ subdirectory
-- Write solution code to a solutions/ subdirectory
+- Write the post-processed notebook to a student/subdirectory
+- Write solution images to a static/subdirectory
+- Write solution code to a solutions/subdirectory """
 
-"""
 import os
 import re
 import sys
@@ -27,7 +25,6 @@ import hashlib
 from io import BytesIO
 from binascii import a2b_base64
 from copy import deepcopy
-
 from PIL import Image
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
@@ -44,13 +41,14 @@ GITHUB_TREE_URL = (
 
 
 def main(arglist):
-    """Process IPython notebooks from a list of files."""
+    """ Process IPython notebooks from a list of files. """
     args = parse_args(arglist)
 
     # Filter paths from the git manifest
     # - Only process .ipynb
     # - Don't process student notebooks
     # - Don't process deleted notebooks (which are paths in the git manifest)
+    
     def should_process(path):
         return all([
             path.endswith(".ipynb"),
@@ -64,7 +62,7 @@ def main(arglist):
         print("No notebook files found")
         sys.exit(0)
 
-    # Set execution parameters. We allow NotImplementedError as that is raised
+    # Set execution parameters. We allow NotImplementedError as it is raised
     # by incomplete exercises and is unlikely to be otherwise encountered.
     exec_kws = {"timeout": 14400, "allow_error_names": ["NotImplementedError"]}
 
@@ -87,7 +85,7 @@ def main(arglist):
                 err = (
                     "Notebook is not sequentially executed on a fresh kernel."
                     "\n"
-                    "Please do 'Restart and run all' before pushing to Github."
+                    "Please 'Restart and run all' before pushing to Github."
                 )
                 errors[nb_path] = err
                 continue
@@ -130,7 +128,7 @@ def main(arglist):
                 # add kaggle badge
                 add_kaggle_badge(cell, nb_path)
 
-        # Ensure that Colab metadata dict exists and enforce some settings
+        # Ensure that Colab metadata dictionary exists and enforce some settings
         add_colab_metadata(nb, nb_name)
 
         # Write the original notebook back to disk, clearing outputs only for tutorials
@@ -139,11 +137,12 @@ def main(arglist):
             nb_clean = clean_notebook(nb, clear_outputs=nb_path.startswith("tutorials"))
             nbformat.write(nb_clean, f)
 
-        # if the notebook is not in tutorials, skip the creation/update of the student, static, solutions directories
+        # If the notebook is not in tutorials, skip the creation/update of the student, static, solutions directories
         if not nb_path.startswith("tutorials"):
           continue
 
         # Create subdirectories, if they don't exist
+        # This is necessary for first time runs
         student_dir = make_sub_dir(nb_dir, "student")
         static_dir = make_sub_dir(nb_dir, "static")
         solutions_dir = make_sub_dir(nb_dir, "solutions")
@@ -205,7 +204,7 @@ def main(arglist):
 # ------------------------------------------------------------------------------------ #
 
 def execute_notebook(executor, nb, raise_fast):
-    """Execute the notebook, returning errors to be handled."""
+    """ Execute the notebook, returning errors to be handled. """
     try:
         executor.preprocess(nb)
     except Exception as error:
@@ -218,7 +217,7 @@ def execute_notebook(executor, nb, raise_fast):
 
 
 def check_execution(executor, nb, raise_fast):
-    """Check that all code cells with source have been executed without error."""
+    """ Check that all code cells with source have been executed without error. """
     error = None
     for cell in nb.get("cells", []):
 
@@ -245,7 +244,7 @@ def check_execution(executor, nb, raise_fast):
 
 
 def extract_solutions(nb, nb_dir, nb_name):
-    """Convert solution cells to markdown; embed images from Python output."""
+    """ Convert solution cells to markdown; embed images from Python output. """
     nb = deepcopy(nb)
     _, tutorial_dir = os.path.split(nb_dir)
 
@@ -320,7 +319,7 @@ def extract_solutions(nb, nb_dir, nb_name):
 
 
 def instructor_version(nb, nb_dir, nb_name):
-    """Convert notebook to instructor notebook."""
+    """ Convert notebook to instructor notebook. """
     nb = deepcopy(nb)
     _, tutorial_dir = os.path.split(nb_dir)
 
@@ -347,7 +346,7 @@ def instructor_version(nb, nb_dir, nb_name):
 
 
 def clean_notebook(nb, clear_outputs=True):
-    """Remove cell outputs and most unimportant metadata."""
+    """ Remove cell outputs and most unimportant metadata. """
     # Always operate on a copy of the input notebook
     nb = deepcopy(nb)
 
@@ -396,7 +395,7 @@ def clean_notebook(nb, clear_outputs=True):
 
 
 def add_colab_metadata(nb, nb_name):
-    """Ensure that notebook has Colab metadata and enforce some settings."""
+    """ Ensure that notebook has Colab metadata and enforce some settings. """
     if "colab" not in nb["metadata"]:
         nb["metadata"]["colab"] = {}
 
@@ -412,7 +411,7 @@ def add_colab_metadata(nb, nb_name):
 
 
 def clean_whitespace(nb):
-    """Remove trailing whitespace from all code cell lines."""
+    """ Remove trailing whitespace from all code cell lines. """
     for cell in nb.get("cells", []):
         if cell.get("cell_type", "") == "code":
             source_lines = cell["source"].splitlines()
@@ -434,7 +433,7 @@ def test_clean_whitespace():
 
 
 def has_solution(cell):
-    """Return True if cell is marked as containing an exercise solution."""
+    """ Return True if cell is marked as containing an exercise solution. """
     cell_text = cell["source"].replace(" ", "").lower()
     first_line = cell_text.split("\n")[0]
     return (
@@ -444,7 +443,7 @@ def has_solution(cell):
 
 
 def has_code_exercise(cell):
-    """Return True if cell is marked as containing an exercise solution."""
+    """ Return True if cell is marked as containing an exercise solution. """
     cell_text = cell["source"].replace(" ", "").lower()
     first_line = cell_text.split("\n")[0]
     return (
@@ -466,7 +465,7 @@ def test_has_solution():
 
 
 def has_colab_badge(cell):
-    """Return True if cell has a Colab badge as an HTML element."""
+    """ Return True if cell has a Colab badge as an HTML element. """
     return "colab-badge.svg" in cell["source"]
 
 
@@ -485,7 +484,7 @@ def test_has_colab_badge():
 
 
 def redirect_colab_badge_to_main_branch(cell):
-    """Modify the Colab badge to point at the main branch on Github."""
+    """ Modify the Colab badge to point at the main branch on Github. """
     cell_text = cell["source"]
     p = re.compile(r"^(.+/NeuromatchAcademy/" + REPO + r"/blob/)[\w-]+(/.+$)")
     cell["source"] = p.sub(r"\1" + MAIN_BRANCH + r"\2", cell_text)
@@ -511,23 +510,23 @@ def test_redirect_colab_badge_to_main_branch():
 
 
 def redirect_colab_badge_to_student_version(cell):
-    """Modify the Colab badge to point at student version of the notebook."""
+    """ Modify the Colab badge to point at student version of the notebook. """
     cell_text = cell["source"]
-    # redirect the colab badge
+    # Redirect the colab badge
     p = re.compile(r"(^.+blob/" + MAIN_BRANCH + r"/tutorials/W\dD\d\w+)/(\w+\.ipynb.+)")
     cell_text = p.sub(r"\1/student/\2", cell_text)
-    # redirect the kaggle badge
+    # Redirect the kaggle badge
     p = re.compile(r"(^.+/tutorials/W\dD\d\w+)/(\w+\.ipynb.+)")
     cell["source"] = p.sub(r"\1/student/\2", cell_text)
 
 
 def redirect_colab_badge_to_instructor_version(cell):
-    """Modify the Colab badge to point at instructor version of the notebook."""
+    """ Modify the Colab badge to point at instructor version of the notebook. """
     cell_text = cell["source"]
-    # redirect the colab badge
+    # Redirect the colab badge
     p = re.compile(r"(^.+blob/" + MAIN_BRANCH + r"/tutorials/W\dD\d\w+)/(\w+\.ipynb.+)")
     cell_text = p.sub(r"\1/instructor/\2", cell_text)
-    # redirect the kaggle badge
+    # Redirect the kaggle badge
     p = re.compile(r"(^.+/tutorials/W\dD\d\w+)/(\w+\.ipynb.+)")
     cell["source"] = p.sub(r"\1/instructor/\2", cell_text)
 
@@ -552,7 +551,7 @@ def test_redirect_colab_badge_to_student_version():
     assert cell["source"] == expected
 
 def add_kaggle_badge(cell, nb_path):
-    """Add a kaggle badge if not exists."""
+    """ Add a kaggle badge if not exists. """
     cell_text = cell["source"]
     if "kaggle" not in cell_text:
         badge_link = "https://kaggle.com/static/images/open-in-kaggle.svg"
@@ -563,7 +562,7 @@ def add_kaggle_badge(cell, nb_path):
         cell["source"] += f' &nbsp; {a}'
 
 def sequentially_executed(nb):
-    """Return True if notebook appears freshly executed from top-to-bottom."""
+    """ Return True if notebook appears freshly executed from top-to-bottom. """
     exec_counts = [
         cell["execution_count"]
         for cell in nb.get("cells", [])
@@ -578,7 +577,7 @@ def sequentially_executed(nb):
 
 
 def make_sub_dir(nb_dir, name):
-    """Create nb_dir/name if it does not exist."""
+    """ Create nb_dir/name if it does not exist. """
     sub_dir = os.path.join(nb_dir, name)
     if not os.path.exists(sub_dir):
         os.mkdir(sub_dir)
@@ -586,7 +585,7 @@ def make_sub_dir(nb_dir, name):
 
 
 def exit(errors):
-    """Exit with message and status dependent on contents of errors dict."""
+    """ Exit with message and status dependent on contents of errors dict. """
     for failed_file, error in errors.items():
         print(f"{failed_file} failed quality control.", file=sys.stderr)
         print(error, file=sys.stderr)
@@ -598,7 +597,7 @@ def exit(errors):
 
 
 def parse_args(arglist):
-    """Handle the command-line arguments."""
+    """ Handle the command-line arguments. """
     parser = argparse.ArgumentParser(
         description="Process neuromatch tutorial notebooks",
     )
@@ -640,5 +639,4 @@ def parse_args(arglist):
 
 
 if __name__ == "__main__":
-
     main(sys.argv[1:])
