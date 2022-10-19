@@ -23,11 +23,29 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
-
+          
+      - name: skip-workflow
+        uses: GaganaB/nmaci@v1
+        with:
+          phrase: 'skip-workflow'
+          search: '["commit_messages", "pull_request"]' # search commits and pr title
+          pr-message: 'title'
+          # or pr-message: 'body' or pr-message: 'title & body'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          # Ref: https://github.com/actions/cache/blob/main/examples.md#python---pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+             ${{ runner.os }}-pip-
+          
       - name: Install dependencies
         run: |
           pip install pytest -r requirements.txt
           jupyter kernelspec list
-
+          
       - name: Execute tests
         run: make test
