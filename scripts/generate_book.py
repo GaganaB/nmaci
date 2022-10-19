@@ -14,12 +14,12 @@ def main():
     with open('tutorials/materials.yml') as fh:
         materials = yaml.load(fh, Loader=yaml.FullLoader)
 
-    # Make the dictionary that contains the chapters
+    # Instantiate dictionary containing chapters
     toc = {}
     for m in materials:
         if m['category'] not in toc.keys():
             toc[m['category']] = {'part': m['category'], 'chapters': []}
-    # Add the project booklet
+    # Add project booklet
     toc['Project Booklet'] = {'part': 'Project Booklet', 'chapters': []}
 
     art_file_list = os.listdir('tutorials/Art/')
@@ -27,7 +27,7 @@ def main():
     for m in materials:
         directory = f"{m['day']}_{''.join(m['name'].split())}"
 
-        # Make temporary chapter title file
+        # Temporary chapter title file
         with open(f"tutorials/{directory}/chapter_title.md",
                   "w+") as title_file:
             title_page = f"# {m['name']}"
@@ -45,13 +45,13 @@ def main():
         part = m['category']
         directory = f"tutorials/{m['day']}_{''.join(m['name'].split())}"
 
-        # Make list of notebook sections
+        # List of notebook sections - Intro, tutorial, Outro
         notebook_list = []
         notebook_list += [f"{directory}/{ARG}/{m['day']}_Intro.ipynb"] if os.path.exists(f"{directory}/{m['day']}_Intro.ipynb") else []
         notebook_list += [f"{directory}/{ARG}/{m['day']}_Tutorial{i + 1}.ipynb" for i in range(m['tutorials'])]
         notebook_list += [f"{directory}/{ARG}/{m['day']}_Outro.ipynb"] if os.path.exists(f"{directory}/{m['day']}_Outro.ipynb") else []
 
-        # Add and process all notebooks
+        # Add and pre-process all notebooks
         for notebook_file_path in notebook_list:
             chapter['sections'].append({'file': notebook_file_path})
             pre_process_notebook(notebook_file_path)
@@ -76,7 +76,7 @@ def main():
     toc[part]['chapters'].append({'file': 'projects/README.md', 'title': 'Introduction'})
     toc[part]['chapters'].append({'file': 'projects/docs/project_guidance.md'})
 
-    # Add Modeling Steps
+    # Add Modeling Steps to project files
     toc[part]['chapters'].append({'file': 'projects/modelingsteps/intro.md',
                                   'sections': [{'file': 'projects/modelingsteps/ModelingSteps_1through4.ipynb'},
                                                {'file': 'projects/modelingsteps/ModelingSteps_5through10.ipynb'},
@@ -125,7 +125,7 @@ def main():
     if os.path.exists(f"tutorials/intro.ipynb"):
         pre_process_notebook(f"tutorials/intro.ipynb")
 
-    # Schedule chapter
+    # Schedule chapters - with daily schedule, shared calendars and time-zone widgets
     chapter = {'chapters': [{'file': 'tutorials/Schedule/schedule_intro.md',
                              'sections': [{'file': 'tutorials/Schedule/daily_schedules.md'},
                                           {'file': 'tutorials/Schedule/shared_calendars.md'},
@@ -133,7 +133,7 @@ def main():
                                          ]}]}
     toc_list += [chapter]
 
-    # Technical help chapter
+    # Technical help chapters
     chapter = {'chapters': [{'file': 'tutorials/TechnicalHelp/tech_intro.md', 
                              'sections': [{'file': 'tutorials/TechnicalHelp/Jupyterbook.md',
                                            'sections': [{'file': 'tutorials/TechnicalHelp/Tutorial_colab.md'},
@@ -166,7 +166,7 @@ def main():
 
 
 def pre_process_notebook(file_path):
-
+    """ Open colab in new tab, change video widths, link hidden cells """
     with open(file_path, encoding="utf-8") as read_notebook:
         content = json.load(read_notebook)
     pre_processed_content = open_in_colab_new_tab(content)
@@ -177,6 +177,7 @@ def pre_process_notebook(file_path):
 
 
 def open_in_colab_new_tab(content):
+    " Open colab in new tab using anchor target"
     cells = content['cells']
     parsed_html = BeautifulSoup(cells[0]['source'][0], "html.parser")
     for anchor in parsed_html.findAll('a'):
@@ -186,6 +187,7 @@ def open_in_colab_new_tab(content):
     return content
 
 def link_hidden_cells(content):
+    """ Use source markdown to link tags, metadata, iFrames """
     cells = content['cells']
     updated_cells = cells.copy()
 
@@ -244,7 +246,7 @@ def link_hidden_cells(content):
     return content
 
 def change_video_widths(content):
-
+    """ Change all video sizes to 730 x 410 """
     for cell in content['cells']:
         if 'YouTubeVideo' in ''.join(cell['source']):
 
