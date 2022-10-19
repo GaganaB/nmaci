@@ -1,9 +1,11 @@
-"""Print names of derivative files that are no longer used in the notebooks."""
+""" Print names of derivative files that are no longer used in the notebooks. """
 from glob import glob
 
 if __name__ == "__main__":
 
+    # Find all pathnames matching specified pattern 
     day_paths = glob("tutorials/W?D?_*")
+    
     for day_path in sorted(day_paths):
 
         # Read all of the text for this day's student notebooks into one string
