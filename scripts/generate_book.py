@@ -177,7 +177,7 @@ def pre_process_notebook(file_path):
 
 
 def open_in_colab_new_tab(content):
-    " Open colab in new tab using anchor target"
+    """ Open colab in new tab using anchor target """
     cells = content['cells']
     parsed_html = BeautifulSoup(cells[0]['source'][0], "html.parser")
     for anchor in parsed_html.findAll('a'):
