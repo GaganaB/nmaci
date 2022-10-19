@@ -1,4 +1,4 @@
-"""From a list of files, select process-able notebooks and print."""
+""" From a list of files, select processable notebooks and print. """
 import os
 import sys
 
