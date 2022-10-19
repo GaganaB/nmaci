@@ -1,5 +1,6 @@
 #! /usr/bin/env python
-"""Check that exercise code matches solution code.
+
+""" Check that exercise code matches solution code.
 
 Exercises are allowed to deviate from solutions in several ways:
 
@@ -11,9 +12,8 @@ Additionally:
 - Docstrings are currently ignored
 - Blank lines are ignored
 
-This script will report whether exercises and solutions otherwise match.
+This script will report whether exercises and solutions otherwise match. """
 
-"""
 import os
 import re
 import sys
@@ -25,13 +25,18 @@ import nbformat
 
 def main(arglist):
 
+    # Tutorial which needs to be verified
     args = parse_args(arglist)
-
+    
+    """ Figured out a way to incorporate this into Github actions
     if "skip verification" in args.commit_message:
         # Putting this logic here as I didn't have time to figure
         # out how to do it in the github actions workflow
         print("Skipping exercise verification")
         sys.exit(0)
+    Referenced here: https://github.com/marketplace/actions/skip-workflow
+                     https://github.com/saulmaldonado/skip-workflow
+    """
 
     # Track overall status
     failure = False
@@ -40,6 +45,8 @@ def main(arglist):
     for nb_fpath in args.files:
 
         _, nb_name = os.path.split(nb_fpath)
+        
+        # Finding code that's unmatched by parsing per exercise
         unmatched[nb_name] = []
 
         # Load the notebook file
@@ -77,7 +84,7 @@ def main(arglist):
                 if unmatched_code or unmatched_comments:
                     failure = True
 
-    # Report the results for this noteobokk
+    # Report the results for this notebook
     for nb_name, nb_unmatched in unmatched.items():
         print()
         print("---" + nb_name + "-" * (69 - 5 - len(nb_name)))
@@ -91,7 +98,7 @@ def main(arglist):
 
 
 def report(exercise, code, comment, thresh=50):
-    """Print information about unmatched code and comments in an exercise."""
+    """ Print information about unmatched code and comments in an exercise. """
     code_status = "FAIL" if code else "PASS"
     comment_status = "FAIL" if comment else "PASS"
     print(
@@ -110,7 +117,7 @@ def report(exercise, code, comment, thresh=50):
 
 
 def logical_lines(func_str):
-    """Extract code and block comments from cell string."""
+    """ Extract code and block comments from cell string. """
     # Standardize docstring string format
     func_str = func_str.replace("'''", '"""')
 
@@ -124,7 +131,6 @@ def logical_lines(func_str):
     reading_block_comment = False
 
     for line in func_str.split("\n"):
-
         # Detect and ignore lines within multi-line comments
         # - triple quotes (docstrings)
         # - comment hashmark fences
@@ -159,6 +165,7 @@ def logical_lines(func_str):
 
             # If there is code before the comment, assume comment is inline
             # use entire line (allows inline comments in commented-out code)
+            # Remove any common leading whitespace from every line in text.
             if dedent(code_line):
                 code_line = match.group(0)
 
@@ -170,7 +177,6 @@ def logical_lines(func_str):
                 code_line = code_line[2:]
 
             # Check for reasons to ignore the line, otherwise keep it
-
             if not skip_code(code_line):
                 code_lines.append(code_line)
 
@@ -181,7 +187,7 @@ def logical_lines(func_str):
 
 
 def unmatched_lines(stub_lines, solu_lines):
-    """Identify lines in the exercise stub without a match in the solution."""
+    """ Identify lines in the exercise stub without a match in the solution. """
     unmatched = []
 
     for stub_line in stub_lines:
@@ -215,19 +221,19 @@ def unmatched_lines(stub_lines, solu_lines):
 
 
 def skip_code(line):
-    """Return True if a code line should be skipped based on contents."""
+    """ Return True if a code line should be skipped based on contents. """
     line = dedent(line)
     return not line or "NotImplementedError" in line
 
 
 def skip_comment(line):
-    """Return True if a comment line should be skipped based on contents."""
+    """ Return True if a comment line should be skipped based on contents. """
     line = dedent(line)
     return not line or "to_remove" in line or "uncomment" in line.lower()
 
 
 def has_solution(cell):
-    """Return True if cell is marked as containing an exercise solution."""
+    """ Return True if cell is marked as containing an exercise solution. """
     cell_text = cell["source"].replace(" ", "").lower()
     first_line = cell_text.split("\n")[0]
     return (
@@ -238,7 +244,7 @@ def has_solution(cell):
 
 
 def parse_args(arglist):
-    """Handle the command-line arguments."""
+    """ Handle the command-line arguments. """
     parser = argparse.ArgumentParser(
         description="Process neuromatch tutorial notebooks",
     )
@@ -256,5 +262,4 @@ def parse_args(arglist):
 
 
 if __name__ == "__main__":
-
     main(sys.argv[1:])
