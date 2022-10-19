@@ -1,8 +1,7 @@
-"""Write a directory of tutorial notebooks to the README file.
-
+""" Write a directory of tutorial notebooks to the README file.
 Run this script from the root of the github repository.
+This script updates tutorial readme with YouTube playlist links, slide URLs, NBViewer/Kaggle/Colab badges, further readings """
 
-"""
 import os
 from glob import glob
 import yaml
@@ -12,7 +11,6 @@ MAIN_BRANCH = os.environ.get("NMA_MAIN_BRANCH", "main")
 
 
 def main():
-
     # Initialize the lines in tutorials/README.md
     course_readme_text = [
     ]
@@ -20,7 +18,7 @@ def main():
     try:
         playlist_urls = load_youtube_playlist_urls()
     except Exception as err:
-        print("Encountered error while loading youtube playlist links")
+        print("Encountered error while loading YouTube playlist links")
         print(err)
         playlist_urls = {}
 
@@ -32,8 +30,8 @@ def main():
         slide_urls = {}
 
     day_anchors = {}
-
     day_paths = sorted(glob("tutorials/W?D?_*"))
+    
     for day_path in day_paths:
 
         day_name = os.path.split(day_path)[-1]
@@ -48,13 +46,13 @@ def main():
                 topic_words[-1] += letter
         topic = " ".join(topic_words)
 
-        # Note: this will fail if we have 10+ notebooks
+        # Note: This fails if we have >10 notebooks
         notebooks = sorted(glob(f"{day_path}/*.ipynb"))
 
         if not notebooks:
             continue
 
-        # Track the anchor to this section for embed in the header
+        # Track the anchor to this section for embedding in the header
         anchor = "-".join([
             day_code.lower(),
             "-",
@@ -66,13 +64,14 @@ def main():
         instructor_notebooks = get_instructor_links(notebooks)
         student_notebooks = get_student_links(notebooks)
 
-        # Write the day information into the course README
+        # Append day information into course README
         course_readme_text.extend([
             f"## {day_code} - {topic}",
             "",
         ])
 
         # Add a link to the YouTube lecture playlist, if we have one
+        # Additional note: This may be subject to change if we curate YouTube channel
         youtube_url = playlist_urls.get(day_code, None)
         if youtube_url is not None:
             course_readme_text.extend([
@@ -101,8 +100,8 @@ def main():
             course_readme_text.extend([f"[Further Reading]({reading_url})"])
             course_readme_text.append("\n")
 
-        # Now make the day-specific README
-        # with links to both instructor and student versions
+        # Append to day-specific README
+        # Links to both instructor and student versions
         day_readme_text = [
             f"# {day_code} - {topic}",
             "",
@@ -145,7 +144,7 @@ def main():
 
 
 def load_youtube_playlist_urls():
-    """Create a mapping from day code to youtube link based on text file."""
+    """ Create a mapping from day code to youtube link based on text file. """
     with open('tutorials/materials.yml') as fh:
         materials = yaml.load(fh, Loader=yaml.FullLoader)
     days = [m['day'] for m in materials]
@@ -154,7 +153,7 @@ def load_youtube_playlist_urls():
 
 
 def load_slide_urls():
-    """Create a hierarchical mapping to slide PDF urls based on text file."""
+    """ Create a hierarchical mapping to slide PDF urls based on text file. """
     with open('tutorials/materials.yml') as fh:
         materials = yaml.load(fh, Loader=yaml.FullLoader)
     slide_links = {}
@@ -167,7 +166,7 @@ def load_slide_urls():
 
 
 def write_badge_table(notebooks):
-    """Make a markdown table with colab/nbviewer badge links."""
+    """ Make a markdown table with colab/nbviewer badge links. """
 
     # Add the table header
     table_text = [
@@ -200,7 +199,7 @@ def write_badge_table(notebooks):
 
 
 def get_instructor_links(base_notebooks):
-    """Convert a list of base notebook paths to instructor versions."""
+    """ Convert a list of base notebook paths to instructor versions. """
     instructor_notebooks = []
     for base_nb in base_notebooks:
         if 'Tutorial' in base_nb:
@@ -212,7 +211,7 @@ def get_instructor_links(base_notebooks):
 
 
 def get_student_links(base_notebooks):
-    """Convert a list of base notebook paths to student versions."""
+    """ Convert a list of base notebook paths to student versions. """
     student_notebooks = []
     for base_nb in base_notebooks:
         if 'Tutorial' in base_nb:
@@ -224,7 +223,7 @@ def get_student_links(base_notebooks):
 
 
 def make_colab_badge(local_path):
-    """Generate a Google Colaboratory badge for a notebook on github."""
+    """ Generate a Google Colaboratory badge for a notebook on github. """
     alt_text = "Open In Colab"
     badge_svg = "https://colab.research.google.com/assets/colab-badge.svg"
     service = "https://colab.research.google.com"
@@ -233,7 +232,7 @@ def make_colab_badge(local_path):
 
 
 def make_kaggle_badge(local_path):
-    """Generate a kaggle badge for a notebook on github."""
+    """ Generate a kaggle badge for a notebook on github. """
     alt_text = "Open In kaggle"
     badge_svg = "https://kaggle.com/static/images/open-in-kaggle.svg"
     service = "https://kaggle.com/kernels/welcome?src="
@@ -242,7 +241,7 @@ def make_kaggle_badge(local_path):
 
 
 def make_nbviewer_badge(local_path):
-    """Generate an NBViewer badge for a notebook on github."""
+    """ Generate an NBViewer badge for a notebook on github. """
     alt_text = "View the notebook"
     badge_svg = "https://img.shields.io/badge/render-nbviewer-orange.svg"
     service = "https://nbviewer.jupyter.org"
@@ -251,10 +250,9 @@ def make_nbviewer_badge(local_path):
 
 
 def make_badge(alt_text, badge_svg, service, local_path, url_base):
-    """Generate a markdown element for a badge image that links to a file."""
+    """ Generate a markdown element for a badge image that links to a file. """
     return f"[![{alt_text}]({badge_svg})]({url_base}/{local_path})"
 
 
 if __name__ == "__main__":
-
     main()
