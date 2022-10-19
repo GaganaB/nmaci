@@ -1,5 +1,4 @@
 import os
-
 import yaml
 from jinja2 import Template
 import traceback
@@ -20,12 +19,10 @@ def main():
 
     art_file_list = os.listdir('tutorials/Art/')
 
-    art_file_list = os.listdir('tutorials/Art/')
-
     for m in materials:
         directory = f"{m['day']}_{''.join(m['name'].split())}"
 
-        # Make temporary chapter title file
+        # Temporary chapter title file
         with open(f"tutorials/{directory}/chapter_title.md",
                   "w+") as title_file:
             title_page = f"# {m['name']}"
@@ -43,14 +40,14 @@ def main():
         part = m['category']
         directory = f"tutorials/{m['day']}_{''.join(m['name'].split())}"
 
-        # Make list of notebook sections
+        # List of notebook sections - Intro, tutorial, Outro
         notebook_list = []
         notebook_list += [f"{directory}/{m['day']}_Intro.ipynb"] if os.path.exists(f"{directory}/{m['day']}_Intro.ipynb") else []
         notebook_list += [f"{directory}/student/{m['day']}_Tutorial{i + 1}.ipynb" for i in range(m['tutorials'])]
         notebook_list += [f"{directory}/{m['day']}_Outro.ipynb"] if os.path.exists(f"{directory}/{m['day']}_Outro.ipynb") else []
         notebook_list += [f"{directory}/{m['day']}_DaySummary.ipynb"] if os.path.exists(f"{directory}/{m['day']}_DaySummary.ipynb") else []
 
-        # Add and process all notebooks
+        # Add and pre-process all notebooks
         for notebook_file_path in notebook_list:
             chapter['sections'].append({'file': notebook_file_path})
             pre_process_notebook(notebook_file_path)
@@ -87,7 +84,7 @@ def main():
 
 
 def pre_process_notebook(file_path):
-
+    """ Open colab in new tab, change video widths, link hidden cells """
     with open(file_path, encoding="utf-8") as read_notebook:
         content = json.load(read_notebook)
     pre_processed_content = open_in_colab_new_tab(content)
@@ -98,6 +95,7 @@ def pre_process_notebook(file_path):
 
 
 def open_in_colab_new_tab(content):
+    """ Open colab in new tab using anchor target """
     cells = content['cells']
     parsed_html = BeautifulSoup(cells[0]['source'][0], "html.parser")
     for anchor in parsed_html.findAll('a'):
@@ -108,6 +106,7 @@ def open_in_colab_new_tab(content):
 
 
 def link_hidden_cells(content):
+    """ Use source markdown to link tags, metadata, iFrames """
     cells = content['cells']
     updated_cells = cells.copy()
 
@@ -167,7 +166,7 @@ def link_hidden_cells(content):
 
 
 def change_video_widths(content):
-
+    """ Change all video sizes to 730 x 410 """
     for cell in content['cells']:
         if 'YouTubeVideo' in ''.join(cell['source']):
 
